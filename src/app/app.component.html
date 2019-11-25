@@ -2,14 +2,21 @@
     <h1>
       Welcome to {{title}}!
     </h1>
-        <select id="selectCountry" (change)="selectChangeHandler($event)">
+        <select style="width:400px" id="selectCountry" (change)="selectChangeHandler($event)">
           <option disabled>Choose a country</option>
           <option>Loading...</option>
         </select>
         &nbsp;<button type="button" (click)="drawChart()">Generate Chart</button>
-       </div>
+      <br><br>
+    <h3 id="chartTitle"></h3>  
+    <div id="instructions">
+        </div>  
        <div >
           <canvas id="canvas" >{{ chart }}</canvas>
         </div>
+        <div >
+          <canvas id="canvas2" >{{ chart }}</canvas>
+        </div>
+     </div>
        
 <router-outlet></router-outlet>
