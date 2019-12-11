@@ -2,5 +2,5 @@ export interface Data {
     import_country: String;
     make: String;
     model: String;
-    sale_price: Number;
+    sale_price: number;
   }

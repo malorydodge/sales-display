@@ -17,13 +17,13 @@ export class AppComponent implements OnInit {
   }
   public chart:Chart;
   public pieChart:Chart;
-  sale_price =[]; 
   country ="";
-  make = [];
-  unique_makes=[];
-  sales_by_make=[];
-  model = [];
   import_country =[];
+  public sales:Data[] = [];
+  makes = [];
+  models = [];
+  model_sales=[];
+  make_sales=[];
   title = 'Vandelay Industries';
   public data:any =[];
   constructor(private _sales:SalesService) {}
@@ -45,6 +45,9 @@ export class AppComponent implements OnInit {
     });
   }
   drawChart(){ // create bar chart for given country's total sales by make
+    this.makes=[];
+    this.make_sales =[];
+    this.sales =[];
     document.getElementById("instructions").innerHTML = 
     "<br>For sales information on which models of each make are selling best, click on the make in the graph!<br><br>";
     var c = <HTMLCanvasElement> document.getElementById("canvas");
@@ -59,38 +62,39 @@ export class AppComponent implements OnInit {
     if(btn != undefined || btn != null){
       btn.hidden = true;
     }
-    this.make =[]; // clear arrays for new values
-    this.model=[];
-    this.sale_price =[];
     this.country = this.selectedCountry; // get user's selection
     document.getElementById("chartTitle").innerHTML = 
     "Sales by Make of "+ this.country;
     this._sales.getSalesByCountry(this.country).subscribe((res: Data[]) => {
       res.forEach(y => {
-        this.make.push(y.make);
-        this.model.push(y.model);
-        this.sale_price.push(y.sale_price);
+        this.sales.push(y); // add sale object to array
       });
-    this.unique_makes = [...new Set(this.make)]; // create new array without duplicate makes
-    this.unique_makes.sort();
-    this.sales_by_make = new Array(this.unique_makes.length);
-    this.sales_by_make.fill(0);
-    for(var i=0; i < this.make.length; i++){
-      for (var j=0; j <this.unique_makes.length; j++){
-        if (this.make[i] == this.unique_makes[j]){
-            this.sales_by_make[j]+=this.sale_price[i]; // add total sales of each model
-        }
+    this.makes = [...new Set(this.sales.map(function getMakes(sale) { // get each make in sales
+      return sale.make;
+    }))].sort();
+    var sales_of=[]
+    this.makes.forEach(make => {
+      sales_of = this.sales.map(function getMakes(sale) { // filter to match sales of given make
+        if(sale.make == make) return sale.sale_price;
+      });      
+      var filtered = sales_of.filter(function (el) { // filter out nonmatching sales
+        return el != null;
+      });
+      function getSum(total, num) { 
+        return total + Math.round(num);
       }
-    }
+      var make_sale_total = filtered.reduce(getSum, 0); // total up sales
+      this.make_sales.push(make_sale_total);
+    });
     this.chart = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: this.unique_makes, 
+        labels: this.makes, 
         datasets: [ {
           backgroundColor: "pink",
           borderColor: "red",
           borderWidth: 1,
-          data: this.sales_by_make
+          data: this.make_sales
         },
         ]
       },
@@ -124,38 +128,42 @@ export class AppComponent implements OnInit {
       }
     };
     }); 
-  }
+    }
   drawPieChart(index){
+    this.models =[];
+    this.model_sales =[];
     var c = <HTMLCanvasElement> document.getElementById("canvas");
     c.style.display = "none";
-    var givenMake = this.unique_makes[index];
-    document.getElementById("chartTitle").innerHTML = 
-    givenMake+" sales by Model in "+ this.country;
-    document.getElementById("instructions").innerHTML = 
-    "";
-    var models_by_make = [];
-    for(var i =0;i<this.model.length;i++){ // loop through all models
-      if(this.make[i] === givenMake){ // if the make of this model is the given make 
-        models_by_make.push(this.model[i]); // add to list of make's models
-      }
-    }
-    var unique_models = [...new Set(models_by_make.sort())]; // create new array without duplicate models
-    var sales_by_model = new Array(unique_models.length);
-    sales_by_model.fill(0);
-    for(var i=0; i < this.model.length; i++){
-      for (var j=0; j <unique_models.length; j++){
-        if (this.model[i] == unique_models[j]){
-            sales_by_model[j]+=this.sale_price[i]; // add total sales of each model
+    var givenMake = this.makes[index];
+    document.getElementById("chartTitle").innerHTML =  givenMake+" sales by Model in "+ this.country;
+    document.getElementById("instructions").innerHTML =  "";
+    var _models = [...new Set(this.sales.map(function getModels(sale) { // get each make in sales
+      if (sale.make == givenMake) return sale.model;
+    }))].sort();
+    this.models = _models.filter(function (el) { // filter out any null results
+      return el != undefined;
+    });
+    var sales_of=[]
+    this.models.forEach(model => {
+        sales_of = this.sales.map(function getMakes(sale) { // filter to match sales of given model
+          if(sale.model == model) return sale.sale_price;
+        });      
+        var filtered = sales_of.filter(function (el) { // filter out nonmatching sales
+          return el != null;
+        });
+        function getSum(total, num) { 
+          return total + Math.round(num);
         }
-      }
-    }
+        var make_sale_total = filtered.reduce(getSum, 0); // total up sales
+        this.model_sales.push(make_sale_total);
+    }); 
     var c2 = <HTMLCanvasElement> document.getElementById("canvas2");
     var ctx = c2.getContext("2d");    
     this.pieChart = new Chart(ctx, {
       type: 'pie',
       data: {
         datasets: [{
-          data: sales_by_model,
+          data: this.model_sales,
           backgroundColor: [
             "#F7464A", "#46BFBD", "#FDB45C", '#e6194b', 
             '#3cb44b', '#ffe119', '#4363d8', '#f58231', 
@@ -172,7 +180,7 @@ export class AppComponent implements OnInit {
             '#ffffff', '#000000'
           ]
         }],
-        labels: unique_models
+        labels: this.models
       },
       
       options: {
@@ -201,4 +209,5 @@ export class AppComponent implements OnInit {
       }}
     
   }
+
 }
