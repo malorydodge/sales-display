@@ -22,7 +22,7 @@
     "@angular/router": "~8.2.14",
     "@swimlane/ngx-charts": "^12.1.0",
     "bootstrap": "^4.3.1",
-    "chart.js": "^2.9.3",
+    "chart.js": "^2.9.4",
     "d3": "^5.14.2",
     "rxjs": "^6.4.0",
     "tslib": "^1.10.0",
